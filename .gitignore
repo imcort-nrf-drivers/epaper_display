@@ -1,3 +1,3 @@
-example/custom/blank/arm5_no_packs/*
-!example/custom/blank/arm5_no_packs/epaper_display.uvoptx
-!example/custom/blank/arm5_no_packs/epaper_display.uvprojx
+example/nRF52832/blank/arm5_no_packs/*
+!example/nRF52832/blank/arm5_no_packs/epaper_display.uvoptx
+!example/nRF52832/blank/arm5_no_packs/epaper_display.uvprojx
