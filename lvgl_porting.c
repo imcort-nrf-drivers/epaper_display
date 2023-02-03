@@ -6,11 +6,28 @@
 static lv_disp_drv_t disp_drv;          /*A variable to hold the drivers. Must be static or global.*/
 
 APP_TIMER_DEF(lvgl_timer);
+APP_TIMER_DEF(refresh_timer);
+
 #define LVGL_TICK_PERIOD 10
+#define REFRESH_TICK_PERIOD 1000
+
+bool waiting_refresh = false;
 
 static void lvgl_timer_handler(void *p_context)
 {
     lv_tick_inc(LVGL_TICK_PERIOD);
+}
+
+static void refresh_timer_handler(void *p_context)
+{
+    if(waiting_refresh)
+    {
+        
+        epd_update_framebuffer();
+        Debug("refresh");
+        
+        waiting_refresh = false;
+    }
 }
 
 static void my_flush_cb(lv_disp_drv_t *disp, const lv_area_t *area, lv_color_t *color_p)
@@ -21,9 +38,8 @@ static void my_flush_cb(lv_disp_drv_t *disp, const lv_area_t *area, lv_color_t *
         epd_update_u8(y, pointer);
         pointer += SCREEN_WIDTH;
     }
-    epd_update_framebuffer();
     lv_disp_flush_ready(&disp_drv);
-    
+    waiting_refresh = true;
 }
 
 static void my_rounder_cb(lv_disp_drv_t * disp_drv, lv_area_t * area)
@@ -43,27 +59,18 @@ static void my_printf(const char * buf)
 void lvgl_begin(void){
     
     epd_begin();
-    epd_clearScreen();
-    
-    delay(1000);
-    
-//    uint8_t pointer[200];
-//    memset(pointer, 0x00, 200);
-//    epd_update_u8(150, pointer);
-//    
-//    epd_update_framebuffer();
-    
- 
+    epd_clearScreen(true);
+
     lv_init();
     
     /*A static or global variable to store the buffers*/
     static lv_disp_draw_buf_t disp_buf;
 
     /*Static or global buffer(s). The second buffer is optional*/
-    static lv_color_t buf_1[SCREEN_WIDTH * 2];
+    static lv_color_t buf_1[SCREEN_WIDTH * 20];
 
     /*Initialize `disp_buf` with the buffer(s). With only one buffer use NULL instead buf_2 */
-    lv_disp_draw_buf_init(&disp_buf, buf_1, NULL, SCREEN_WIDTH * 2);
+    lv_disp_draw_buf_init(&disp_buf, buf_1, NULL, SCREEN_WIDTH * 20);
     
     
     lv_disp_drv_init(&disp_drv);            /*Basic initialization*/
@@ -83,6 +90,12 @@ void lvgl_begin(void){
     APP_ERROR_CHECK(err_code);
     
     err_code = app_timer_start(lvgl_timer, APP_TIMER_TICKS(LVGL_TICK_PERIOD), NULL);
+    APP_ERROR_CHECK(err_code);
+    
+    err_code = app_timer_create(&refresh_timer, APP_TIMER_MODE_REPEATED, refresh_timer_handler);
+    APP_ERROR_CHECK(err_code);
+    
+    err_code = app_timer_start(refresh_timer, APP_TIMER_TICKS(REFRESH_TICK_PERIOD), NULL);
     APP_ERROR_CHECK(err_code);
 
 }

@@ -65,6 +65,8 @@ void epd_begin(void)
     
     cmdBuf[0] = 0x80;
 	epd_writeCommand(0x18, cmdBuf, 1); //Internal temperature
+    
+    memset(epd_framebuffer, 0, sizeof(epd_framebuffer));
 	
 }
 
@@ -94,7 +96,7 @@ void epd_setPartialRamArea(uint16_t x, uint16_t y, uint16_t w, uint16_t h)
     epd_waitBusy();
 }
 
-void epd_clearScreen(void)
+void epd_clearScreen(bool white)
 {
     
     epd_setPartialRamArea(0, 0, 200, 200);
@@ -108,7 +110,7 @@ void epd_clearScreen(void)
     
     digitalWrite(EINK_DC, HIGH);
     
-    cmdBuf[0] = 0xFF;
+    cmdBuf[0] = white ? 0xFF : 0x00;
     
     for(int32_t i = 0; i < 5000; i++)
     {
@@ -134,13 +136,13 @@ void epd_update_u8(uint8_t y, uint8_t* line_buffer)
 
     for(int i = 0; i < SCREEN_WIDTH; i++){
 		
-		if(!line_buffer[i]){
+		if(line_buffer[199 - i]){
 			
-			epd_framebuffer[(25 * y) + (i / 8)] |= set[i & 7];
+			epd_framebuffer[(25 * y) + 25 - (i / 8)] |= set[i & 7];
 		
 		} else {
 		
-			epd_framebuffer[(25 * y) + (i / 8)] &= clr[i & 7];
+			epd_framebuffer[(25 * y) + 25 - (i / 8)] &= clr[i & 7];
 		
 		}
 	
@@ -152,22 +154,8 @@ void epd_update_u8(uint8_t y, uint8_t* line_buffer)
 
 void epd_update_framebuffer(void)
 {
-    
-    cmdBuf[0] = 0x24;
-    
-    digitalWrite(EINK_DC, LOW);
-    digitalWrite(EINK_CS, LOW);
-    
-    spi_transfer(cmdBuf, 1, NULL, 0);
-    
-    digitalWrite(EINK_DC, HIGH);
-    
-    for(int32_t i = 0; i < 5000; i++)
-    {
-        spi_transfer(epd_framebuffer + i, 1, NULL, 0);
-    }
-    
-    digitalWrite(EINK_CS, HIGH);
+
+    epd_sendFrame(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, epd_framebuffer);
     epd_displayFrame();
 }
 
