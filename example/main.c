@@ -47,16 +47,29 @@
 #include "transfer_handler.h"
 #include "epd_2in13_v2.h"
 
+#include "ImageData.h"
+
 int main(void)
 {
+	
+		ret_code_t err_code = NRF_LOG_INIT(NULL);
+    APP_ERROR_CHECK(err_code);
+
+    NRF_LOG_DEFAULT_BACKENDS_INIT();
+	NRF_LOG_INFO("E-paper example started.");
+	NRF_LOG_FLUSH();
 		spi_init();
 		epd_2in13_v2_init(EPD_2IN13_V2_FULL);
 		epd_2in13_v2_clear();
-    NRF_LOG_INFO("E-paper example started.");
+		delay(500);
+		epd_2in13_v2_display((uint8_t*)gImage_2in13b_b);
+	  
+		epd_2in13_v2_sleep();
+    
 
     while (1)
     {
-
+						NRF_LOG_FLUSH();
             __WFE();
 
     }
