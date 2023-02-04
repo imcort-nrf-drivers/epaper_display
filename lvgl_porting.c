@@ -56,6 +56,27 @@ static void my_printf(const char * buf)
     NRF_LOG_FLUSH();
 }
 
+int encoder_pos = 0;
+bool encoder_pressed = false;
+
+void encoder_read(lv_indev_drv_t * drv, lv_indev_data_t*data)
+{
+    static int last_pos = 0;
+    data->enc_diff = encoder_pos - last_pos;
+    last_pos = encoder_pos;
+
+    if(encoder_pressed) 
+    {
+        data->state = LV_INDEV_STATE_PRESSED;
+        encoder_pressed = false;
+    }
+    else 
+    {
+        data->state = LV_INDEV_STATE_RELEASED;
+    }
+        
+}
+
 void lvgl_begin(void){
     
     epd_begin();
@@ -80,8 +101,22 @@ void lvgl_begin(void){
     disp_drv.hor_res = SCREEN_WIDTH;      /*Set the horizontal resolution in pixels*/
     disp_drv.ver_res = SCREEN_HEIGHT;     /*Set the vertical resolution in pixels*/
 
-    lv_disp_drv_register(&disp_drv); /*Register the driver and save the created display objects*/
+    lv_disp_t * disp = lv_disp_drv_register(&disp_drv); /*Register the driver and save the created display objects*/
 	
+    lv_theme_t * th = lv_theme_mono_init(disp, false, LV_FONT_DEFAULT);
+    lv_disp_set_theme(disp, th);
+    
+    lv_group_t * g = lv_group_create();
+    lv_group_set_default(g);
+    
+    static lv_indev_drv_t indev_drv;
+    lv_indev_drv_init(&indev_drv);      /*Basic initialization*/
+    indev_drv.type = LV_INDEV_TYPE_ENCODER;                 /*See below.*/
+    indev_drv.read_cb = encoder_read;              /*See below.*/
+    /*Register the driver in LVGL and save the created input device object*/
+    lv_indev_t * enc_indev = lv_indev_drv_register(&indev_drv);
+    lv_indev_set_group(enc_indev, g);
+    
 	lv_log_register_print_cb(my_printf); /* register print function for debugging */
     
     ret_code_t err_code;

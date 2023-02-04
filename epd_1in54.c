@@ -138,11 +138,11 @@ void epd_update_u8(uint8_t y, uint8_t* line_buffer)
 		
 		if(line_buffer[199 - i]){
 			
-			epd_framebuffer[(25 * y) + 25 - (i / 8)] |= set[i & 7];
+			epd_framebuffer[(25 * y) + 24 - (i / 8)] |= set[i & 7];
 		
 		} else {
 		
-			epd_framebuffer[(25 * y) + 25 - (i / 8)] &= clr[i & 7];
+			epd_framebuffer[(25 * y) + 24 - (i / 8)] &= clr[i & 7];
 		
 		}
 	
@@ -154,9 +154,20 @@ void epd_update_u8(uint8_t y, uint8_t* line_buffer)
 
 void epd_update_framebuffer(void)
 {
-
+    static uint8_t refresh_times = 5;
     epd_sendFrame(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, epd_framebuffer);
-    epd_displayFrame();
+    
+    if(refresh_times < 5)
+    {
+        epd_displayPartFrame();
+        refresh_times++;
+    
+    } else
+    {
+        epd_displayFrame();
+        refresh_times = 0;
+    }
+    
 }
 
 void epd_displayFrame(void)
