@@ -9,9 +9,7 @@ APP_TIMER_DEF(lvgl_timer);
 APP_TIMER_DEF(refresh_timer);
 
 #define LVGL_TICK_PERIOD 10
-#define REFRESH_TICK_PERIOD 1000
-
-bool waiting_refresh = false;
+#define REFRESH_TICK_PERIOD 200
 
 static void lvgl_timer_handler(void *p_context)
 {
@@ -20,14 +18,7 @@ static void lvgl_timer_handler(void *p_context)
 
 static void refresh_timer_handler(void *p_context)
 {
-    if(waiting_refresh)
-    {
-        
-        epd_update_framebuffer();
-        Debug("refresh");
-        
-        waiting_refresh = false;
-    }
+    epd_update_framebuffer();
 }
 
 static void my_flush_cb(lv_disp_drv_t *disp, const lv_area_t *area, lv_color_t *color_p)
@@ -39,7 +30,9 @@ static void my_flush_cb(lv_disp_drv_t *disp, const lv_area_t *area, lv_color_t *
         pointer += SCREEN_WIDTH;
     }
     lv_disp_flush_ready(&disp_drv);
-    waiting_refresh = true;
+    
+    app_timer_start(refresh_timer, APP_TIMER_TICKS(REFRESH_TICK_PERIOD), NULL);
+    
 }
 
 static void my_rounder_cb(lv_disp_drv_t * disp_drv, lv_area_t * area)
@@ -80,7 +73,7 @@ void encoder_read(lv_indev_drv_t * drv, lv_indev_data_t*data)
 void lvgl_begin(void){
     
     epd_begin();
-    epd_clearScreen(true);
+    //epd_clearScreen(true);
 
     lv_init();
     
@@ -127,10 +120,9 @@ void lvgl_begin(void){
     err_code = app_timer_start(lvgl_timer, APP_TIMER_TICKS(LVGL_TICK_PERIOD), NULL);
     APP_ERROR_CHECK(err_code);
     
-    err_code = app_timer_create(&refresh_timer, APP_TIMER_MODE_REPEATED, refresh_timer_handler);
+    err_code = app_timer_create(&refresh_timer, APP_TIMER_MODE_SINGLE_SHOT, refresh_timer_handler);
     APP_ERROR_CHECK(err_code);
     
-    err_code = app_timer_start(refresh_timer, APP_TIMER_TICKS(REFRESH_TICK_PERIOD), NULL);
-    APP_ERROR_CHECK(err_code);
+    
 
 }
