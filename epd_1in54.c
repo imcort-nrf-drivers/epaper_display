@@ -7,6 +7,8 @@ static const uint8_t set[] = {1, 2, 4, 8, 16, 32, 64, 128},
                      clr[] = {(uint8_t)~1,  (uint8_t)~2,  (uint8_t)~4,
                               (uint8_t)~8,  (uint8_t)~16, (uint8_t)~32,
                               (uint8_t)~64, (uint8_t)~128};
+                     
+static bool full_refresh = true;
 
 void epd_waitBusy(void)
 { 
@@ -152,20 +154,26 @@ void epd_update_u8(uint8_t y, uint8_t* line_buffer)
     
 }
 
+void nextFullrefresh(void)
+{
+    
+    full_refresh = true;
+
+}
+
 void epd_update_framebuffer(void)
 {
-    static uint8_t refresh_times = 5;
+    
     epd_sendFrame(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, epd_framebuffer);
     
-    if(refresh_times < 5)
+    if(full_refresh)
     {
-        epd_displayPartFrame();
-        refresh_times++;
+        epd_displayFrame();
+        full_refresh = false;
     
     } else
     {
-        epd_displayFrame();
-        refresh_times = 0;
+        epd_displayPartFrame();
     }
     
 }
